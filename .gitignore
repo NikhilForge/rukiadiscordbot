@@ -1,0 +1,19 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Local databases and logs
+rukia.db
+*.db
+*.log
+
+# Python cache & virtual environments
+__pycache__/
+venv/
+.venv/
+*.pyc
+
+# IDEs
+.vscode/
+.idea/
