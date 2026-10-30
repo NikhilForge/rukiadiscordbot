@@ -1,8 +1,11 @@
 """Rukia: a Discord AI assistant bot. Entry point: ``python bot.py``."""
 import logging
+import os
 import re
 import sys
 from typing import Optional
+
+from aiohttp import web
 
 import discord
 from discord import app_commands
@@ -31,7 +34,25 @@ class RukiaBot(discord.Client):
         self.db: Optional[Database] = None
         self.memory = ConversationMemory(None)
 
+    async def _start_health_server(self) -> None:
+        port_str = os.getenv("PORT")
+        if not port_str:
+            return
+        try:
+            port = int(port_str)
+            app = web.Application()
+            app.router.add_get("/", lambda req: web.Response(text="Rukia is running!"))
+            app.router.add_get("/health", lambda req: web.Response(text="OK", status=200))
+            runner = web.AppRunner(app)
+            await runner.setup()
+            site = web.TCPSite(runner, "0.0.0.0", port)
+            await site.start()
+            log.info("Health server listening on port %d", port)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Could not start health server: %s", exc)
+
     async def setup_hook(self) -> None:
+        await self._start_health_server()
         self.db = await create_database(config.DATABASE_URL)
         self.memory = ConversationMemory(self.db)
         synced = await self.tree.sync()
